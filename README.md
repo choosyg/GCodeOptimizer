@@ -7,6 +7,12 @@ Dieses Programm optimiert den GCode indem es Rampen welche unnötigerweise hin u
 * Der Eintauchwinkel wird aktuell verdoppelt!
 * Benutzung auf eigene Gefahr! Das Programm ist nur so gut, dass es bisher bei mir aufgetauchte Fräsbahnen korrekt optimiert. Bevor ihr den optimierten GCode verwendet, solltet ihr in eurem GCode Prozessor also überprüfen, ob die Bahnen korrekt sind.
 
+## Nutzung
+* Aktuelle Version herunterladen: https://github.com/choosyg/GCodeOptimizer/releases/latest
+* Evtl. musst du noch die Microsoft C++ Redistributables installieren: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
+* GCode-Datei per Drag&Drop auf die GCodeOptimizer.exe ziehen -> neben der GCode-Datei wird das Ergebnis als result.nc gespeichert
+* Alternativ kann das Programm auf der Kommandozeile über "GCodeOptimizer myGcode.nc" aufgerufen werden. Das Ergebnis wird im aktuellen Verzeichnis als result.nc gespeichert.
+
 ## Beispiel:
 
 <table>
