@@ -154,9 +154,8 @@ Part optimizePart( const Part& part ){
                 newz = part[a.end-1].after().z;
             }
 
-            
             Command cmd = part[ a.end+i ];
-            cmd.setValue( 'Z', z + z-startZ );
+            cmd.setValue( 'Z', std::to_string( z + z-startZ ) );
             result.append( cmd );
         }
     }

@@ -1,5 +1,7 @@
 #include "Command.h"
 
+#include <algorithm>
+
 namespace{
     std::vector< std::string > split( const std::string& str, char d ){
         size_t start = 0;
@@ -18,75 +20,74 @@ namespace{
 }
 
 Command::Command( const std::string& str, const Position& before )
-      : str_( str ), before_( before ), after_( before )
+      : before_( before ), after_( before )
 {
-    //Ignore empty lines and comments
+    //Ignore non-GCode lines, eg. empty lines, comments, MCode
     if( str.empty() || str[0] == '(' ){
+        comment_ = str;
         return;
     }
+    
     auto params = split( str, ' ' );
     for( const auto& p : params ){
-        auto d = std::stod( p.substr(1) );
-        map_[p[0]] = d;
-        params_.push_back( Param() );
-        params_.back().key = p[0];
-        params_.back().value = d;
+        setValue( p[0], p.substr(1) );
     }
-
-    if( hasKey('X') ) after_.x=value('X');
-    if( hasKey('Y') ) after_.y=value('Y');
-    if( hasKey('Z') ) after_.z=value('Z');
 }
 
 bool Command::isEmpty() const{
-    return str_.empty();
+    return comment_.empty() && params_.empty();
 }
 
 bool Command::isComment() const{
-    return !str_.empty() && str_[0] == '(';
+    return !comment_.empty();
 }
 
 bool Command::hasKey( char c ) const{
-    return map_.find(c) != map_.end();
+    auto it = std::find_if( params_.begin(), params_.end(), [&](const Param& p){return p.key==c;});
+    return it != params_.end();
 }
 
-const double& Command::value( char c ) const{
-    return map_.at( c );
-}
-
-void Command::setValue( char c, double value ){
-    map_[c] = value;
-    bool found = false;
-    str_ = "";
-    for( size_t i=0; i<params_.size(); ++ i ){
-        if( params_[i].key == c ){
-            params_[i].value = value;
-            found=true;
-        }
-        str_ += params_[i].key + std::to_string(params_[i].value) + " ";
+const Position& Command::setValue( char c, const std::string& value ){
+    auto it = std::find_if( params_.begin(), params_.end(), [&](const Param& p){return p.key==c;});
+    if( it == params_.end() ){
+        params_.emplace_back( c, value );
+    } else {
+        it->value = value;
     }
-    if( !found ){
-        params_.push_back( Param() );
-        params_.back().key = c;
-        params_.back().value = value;
-        str_ += c + std::to_string(value) + " ";
-    }
-    //remove trailing " "
-    str_.erase( str_.size()-1 );
+    if( c == 'X' ) after_.x = std::stod( value );
+    if( c == 'Y' ) after_.y = std::stod( value );
+    if( c == 'Z' ) after_.z = std::stod( value );
+    return after_;
 }
 
 const Position& Command::before() const{
-return before_;
+    return before_;
 }
 
 const Position& Command::after() const {
-return after_;
-}
-
-void Command::comment(){
-str_ = "("+str_+")";
+    return after_;
 }
 
 std::string Command::toString() const{
-return str_;
+    std::string str = comment_;
+
+    if( !params_.empty() ){
+        //Add params, maintain default order
+        auto copy = params_;
+        std::vector<char> order = { 'G', 'M', 'X', 'Y', 'Z', 'I', 'J', 'F', 'S' };
+        for( const auto& c: order ){
+            auto it = std::find_if( copy.begin(), copy.end(), [&](const Command::Param& p){return p.key==c;});
+            if( it != copy.end() ){
+                str += it->key + it->value + " ";
+                copy.erase( it );
+            }
+        }
+        //Add unknown params
+        for( const auto & p: copy ){
+            str += p.key + p.value + " ";
+        }
+        //remove trailing " "
+        str.erase( str.size()-1 );
+    }
+    return str;
 }

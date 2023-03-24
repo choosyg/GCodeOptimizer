@@ -14,20 +14,22 @@ class Command {
       bool isComment() const;
       bool hasKey( char c ) const;
 
-      const double& value( char c ) const;
-      void setValue( char c, double value );
+      const Position& setValue( char c, const std::string& value );
 
       const Position& before() const;
       const Position& after() const;
 
-      void comment();
-
       std::string toString() const;
 
-    private:
-        std::string str_;
-        std::map< char, double > map_;
-        struct Param{ char key; double value;};
-        std::vector<Param> params_;
-        Position before_, after_;
+    private: 
+      struct Param{ 
+        Param( char k, const std::string& v ) : key(k), value(v){}
+        char key; 
+        std::string value;
+      };
+       
+      std::string comment_;
+      
+      std::vector<Param> params_;
+      Position before_, after_;
 };
