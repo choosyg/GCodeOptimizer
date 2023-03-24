@@ -23,6 +23,8 @@ class Part{
         const Position& before() const;
         const Position& after() const;
 
+		std::string toString() const;
+
     private:
         std::vector< Command > cmds_;
 };

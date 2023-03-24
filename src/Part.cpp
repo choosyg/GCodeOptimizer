@@ -37,3 +37,11 @@ const Position& Part::before() const{
 const Position& Part::after() const {
     return cmds_.back().after();
 }
+
+std::string Part::toString() const {
+    std::string str;
+    for( size_t i = 0; i < cmds_.size(); ++i ) {
+        str += cmds_[i].toString() + "\r\n";
+    }
+    return str;
+}
