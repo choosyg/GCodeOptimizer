@@ -1,7 +1,7 @@
 # GCodeOptimizer
 Optimiert Estlcam-GCode für Fräsbahnen mit schräg eintauchendem Werkzeug. Estlcam erzeugt für jede Ebene eine Rampe welche die Maschine vor und wieder zurück fährt. Das braucht gerade für dickes Material mit nicht sehr hohen Anbindungen und kleinen Teilen die haupt Fräszeit! Es ist notwendig um Gravuranfänge, Anbindungen, etc sauber zu fräsen. Es ist jedoch unnötig für alle Fräsebenen oberhalb von Anbindungen für Teile oder Ausschnitte mit geschlossenen Fräsbahnen.
 
-Dieses Programm optimiert den GCode indem es die Rampen ersetzt. 
+Dieses Programm optimiert den GCode indem es Rampen welche unnötigerweise hin und zurück gehen ersetzt. Das Fräsprogramm enthält dann an diesen stellen keine 2 Stops mehr sondern fräst sauber durch was die Fräszeit teilweise erheblich reduziert. 
 
 ## ACHTUNG: 
 * Der Eintauchwinkel wird aktuell verdoppelt!
