@@ -1,3 +1,7 @@
+#include "Command.h"
+#include "Position.h"
+#include "Part.h"
+
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -5,165 +9,6 @@
 #include <string>
 #include <string.h>
 #include <vector>
-
-std::vector< std::string > split( const std::string& str, char d ){
-    size_t start = 0;
-    size_t end = str.find( d );
-    std::vector< std::string > res;
-
-    while( end != std::string::npos ) {
-        res.push_back( str.substr( start, end-start ) );
-        start = end + 1;
-        end = str.find( d, start );
-    }
-    res.push_back( str.substr( start ) );
-
-    return res;
-}
-
-struct Position{
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    bool operator== ( const Position& other ) const{
-        //z is ignored!
-        return x == other.x && y == other.y;
-    }
-    bool operator!= ( const Position& other ) const{
-        //z is ignored!
-        return !this->operator==(other);
-    }
-};
-
-class Command {
-    public:
-      Command( const std::string& str, const Position& before )
-      : str_( str ), before_( before ), after_( before )
-      {
-        //Ignore empty lines and comments
-        if( str.empty() || str[0] == '(' ){
-            return;
-        }
-        auto params = split( str, ' ' );
-        for( const auto& p : params ){
-            auto d = std::stod( p.substr(1) );
-            map_[p[0]] = d;
-            params_.push_back( Param() );
-            params_.back().key = p[0];
-            params_.back().value = d;
-        }
-
-        if( hasKey('X') ) after_.x=value('X');
-        if( hasKey('Y') ) after_.y=value('Y');
-        if( hasKey('Z') ) after_.z=value('Z');
-      }
-
-      bool isEmpty() const{
-        return str_.empty();
-      }
-
-      bool isComment() const{
-        return !str_.empty() && str_[0] == '(';
-      }
-
-      bool hasKey( char c ) const{
-        return map_.find(c) != map_.end();
-      }
-
-      const double& value( char c ) const{
-        return map_.at( c );
-      }
-
-      void setValue( char c, double value ){
-        map_[c] = value;
-        bool found = false;
-        str_ = "";
-        for( size_t i=0; i<params_.size(); ++ i ){
-            if( params_[i].key == c ){
-                params_[i].value = value;
-                found=true;
-            }
-            str_ += params_[i].key + std::to_string(params_[i].value) + " ";
-        }
-        if( !found ){
-            params_.push_back( Param() );
-            params_.back().key = c;
-            params_.back().value = value;
-            str_ += c + std::to_string(value) + " ";
-        }
-        //remove trailing " "
-        str_.erase( str_.size()-1 );
-      }
-
-      const Position& before() const{
-        return before_;
-      }
-
-      const Position& after() const {
-        return after_;
-      }
-
-      void comment(){
-        str_ = "("+str_+")";
-      }
-
-      std::string toString() const{
-        return str_;
-      }
-
-    private:
-        std::string str_;
-        std::map< char, double > map_;
-        struct Param{ char key; double value;};
-        std::vector<Param> params_;
-        Position before_, after_;
-};
-
-class Part{
-    public:
-    size_t start = static_cast<size_t>(-1);
-    
-    size_t end() const{
-        return start+size();
-    }
-
-    size_t size() const {
-        return cmds_.size();
-    }
-
-    void append( const Part& other, size_t begin = 0 ){
-        return append( other, begin, other.size() );
-    }
-
-    void append( const Part& other, size_t begin, size_t end ){
-        for( size_t i=begin; i<end; ++i ) { 
-            cmds_.push_back( other[i] );
-        }
-    }
-
-    void append( const Command& cmd ){
-        cmds_.push_back( cmd );
-    }
-
-    const Command& operator[]( size_t idx ) const{
-        return cmds_[idx];
-    }
-    
-    Command& operator[]( size_t idx ){
-        return cmds_[idx];
-    }
-
-    const Position& before() const{
-        return cmds_.front().before();
-      }
-
-      const Position& after() const {
-        return cmds_.back().after();
-      }
-
-    private:
-    std::vector< Command > cmds_;
-};
 
 std::vector< Part > findParts( const Part& complete ){
     std::vector< Part > parts;
@@ -252,8 +97,6 @@ std::vector< Block > findZBlocks( const Part& part ){
     return blocks;
 }
 
-
-
 Part optimizePart( const Part& part ){
     auto blocks = findZBlocks( part );
 
@@ -321,10 +164,10 @@ Part optimizePart( const Part& part ){
     return result;
 }
 
-Part readComplete(){
+Part readComplete( std::string filename ){
     Part complete;
     complete.start = 0;
-    std::ifstream file("test.nc");
+    std::ifstream file(filename);
     Position pos;
     while( file ){
       std::string line;
@@ -337,7 +180,12 @@ Part readComplete(){
 
 int main( int argc, char** argv ){
 
-    auto complete = readComplete();
+    if( argc != 2 ){
+        std::cout << "Missing GCode file, usage: GCodeOptimizer <file>" << std::endl;
+        exit(1);
+    }
+
+    auto complete = readComplete( argv[1] );
     auto parts = findParts( complete );
 
     Part result;
