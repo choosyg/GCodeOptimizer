@@ -41,7 +41,7 @@ const Position& Part::after() const {
 std::string Part::toString() const {
     std::string str;
     for( size_t i = 0; i < cmds_.size(); ++i ) {
-        str += cmds_[i].toString() + "\r\n";
+        str += cmds_[i].toString() + "\n";
     }
     return str;
 }
