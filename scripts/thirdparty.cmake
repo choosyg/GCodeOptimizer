@@ -1,12 +1,12 @@
 #############################################################
 # GTest
 #############################################################
-set( GTEST_DIR "${PROJECT_SOURCE_DIR}/../Resources/3rd-party-windows-x86_64/gtest-vc141-1.7.0" )
-include_directories( ${GTEST_DIR}/include )
-link_directories( "${GTEST_DIR}/lib" )
-set( GTEST_LIBS
-    optimized gtest
-    debug gtestD
-    optimized gtest_main
-    debug gtest_mainD
-    )
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  # Specify the commit you depend on and update it regularly.
+  URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12.0)
+cmake_minimum_required (VERSION 3.16.0)
 project( GCodeOptimizer )
 
 set( GCodeOptimizer_VERSION_MAJOR 1 )
@@ -8,13 +8,14 @@ set( GCodeOptimizer_VERSION_PATCH 0 )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
 
+set(CMAKE_CXX_STANDARD 17)
+
 include( scripts/thirdparty.cmake )
 include( CTest )
 enable_testing()
 
 include_directories("${GCodeOptimizer_SOURCE_DIR}")
 add_subdirectory( src )
-
 
 set(CPACK_GENERATOR "ZIP")
 set(CPACK_PACKAGE_VENDOR "Chooszg")

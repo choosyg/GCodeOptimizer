@@ -4,6 +4,7 @@
 #include "Position.h"
 #include "Part.h"
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -140,7 +141,7 @@ Part optimizePart(const Part& part) {
 		Colinear blocks can only be optimized if
 		* The next z block is colinear as well and at the same positions
 		-> sonst ggf. eine Anbindung in der Mitte (z achse wird vor der Anbindung hochgefahren)
-		-> der letzte Block muss den Rückweg machen, sonst bleibt die Rampe übrig
+		-> der letzte Block muss den Rï¿½ckweg machen, sonst bleibt die Rampe ï¿½brig
 		*/
 		if (!a.colinear || !b.colinear || a.end - a.start != b.end - b.start) {
 			continue;
@@ -148,7 +149,7 @@ Part optimizePart(const Part& part) {
 
 		/*
 		Sind also beide colinear und gleich lang -> ersten Block optimieren
-		Die erste Hälfte der Commands im Block müssen nachfolgend nochmal ohne Z anpassung angehängt sein
+		Die erste Hï¿½lfte der Commands im Block mï¿½ssen nachfolgend nochmal ohne Z anpassung angehï¿½ngt sein
 		Die letzte Zeile kann abweichen, da evtl. die dort zu fahrende strecke unterbrochen wurde weil der umkehrpunkt erreicht war
 		*/
 		bool isValid = true;
@@ -163,7 +164,7 @@ Part optimizePart(const Part& part) {
 		}
 
 		/*
-		So, nun können wir
+		So, nun kï¿½nnen wir
 		- Den Block weglassen und die Folgezeilen das Z anpassen
 		*/
 		result.append(part, idx, a.start);
@@ -172,7 +173,7 @@ Part optimizePart(const Part& part) {
         bool finalZreached = false;
 		for (size_t i = 0; i < steps; ++i) {
 
-			//Gehe doppelt so tief wie ursprünglich auf diesem Abschnitt, aber nicht tiefer als wir am Ende ein wollen
+			//Gehe doppelt so tief wie ursprï¿½nglich auf diesem Abschnitt, aber nicht tiefer als wir am Ende ein wollen
 			double z = part[a.start + i].after().z;
 			double newz = std::fmax(z + z - startZ, part[a.end - 1].after().z);
             
