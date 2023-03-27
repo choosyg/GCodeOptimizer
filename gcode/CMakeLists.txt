@@ -10,16 +10,14 @@ set( SOURCES
     Position.cpp
 )
 
-add_executable( GCodeOptimizer
+add_library( GCode
     ${SOURCES}
-    main.cpp
 )
 
 add_executable( GCodeTest
-    ${SOURCES}
-    main.test.cpp
+    Optimize.test.cpp
 )
-target_link_libraries( GCodeTest gtest_main )
+target_link_libraries( GCodeTest gtest_main GCode )
 if (MSVC)
     # GTest throws tons of C4996 LNK4099 - Disable it
     target_compile_options( GCodeTest PRIVATE "/wd4996" )

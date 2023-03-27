@@ -15,7 +15,8 @@ include( CTest )
 enable_testing()
 
 include_directories("${GCodeOptimizer_SOURCE_DIR}")
-add_subdirectory( src )
+add_subdirectory( gcode )
+add_subdirectory( app )
 
 set(CPACK_GENERATOR "ZIP")
 set(CPACK_PACKAGE_VENDOR "Chooszg")
