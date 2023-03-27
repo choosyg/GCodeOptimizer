@@ -10,8 +10,9 @@ Dieses Programm optimiert den GCode indem es Rampen welche unnötigerweise hin u
 ## Nutzung
 * Aktuelle Version herunterladen: https://github.com/choosyg/GCodeOptimizer/releases/latest
 * Evtl. musst du noch die Microsoft C++ Redistributables installieren: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
-* GCode-Datei per Drag&Drop auf die GCodeOptimizer.exe ziehen -> neben der GCode-Datei wird das Ergebnis als result.nc gespeichert
-* Alternativ kann das Programm auf der Kommandozeile über "GCodeOptimizer myGcode.nc" aufgerufen werden. Das Ergebnis wird im aktuellen Verzeichnis als result.nc gespeichert.
+* GCode-Datei per Drag&Drop auf die GCodeOptimizer.exe ziehen -> neben der GCode-Datei wird das Ergebnis als optimized.nc (bei älteren Versionen als result.nc) gespeichert
+* Alternativ kann das Programm auf der Kommandozeile über "GCodeOptimizer myGcode.nc" aufgerufen werden. Das Ergebnis wird im aktuellen Verzeichnis als optimized.nc (bei älteren Versionen als result.nc) gespeichert.
+* Das Program gibt am Ende aus um wieviel die Geamtfräsbahn kürzer geworden ist und wieviel schneller sie gefräst wird. Die Einheiten hängen von den Estlcam-Einstellungen ab. Ich habe mm/min eingestellt, die Zahlen sind dann Bahnlänge in mm und Fräsdauer in Minuten. Für die Fräsdauer wird keine Trägheit/Beschleunigung der Maschine berücksichtigt. Es wird nur die Länge der Fräsbahn zusammen mit den gesetzten Geschwindigkeiten (F...) berücksichtigt. Die wahre Fräsdauer wird also etwas höher liegen.
 
 ## Beispiel:
 

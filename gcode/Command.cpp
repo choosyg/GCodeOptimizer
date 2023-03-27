@@ -1,6 +1,7 @@
 #include "Command.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace{
     std::vector< std::string > split( const std::string& str, char d ){
@@ -17,13 +18,32 @@ namespace{
 
         return res;
     }
+
+    class Vector{
+        public:
+            double x;
+            double y;
+
+            Vector( const Position& a, const Position& b ) :x( b.x-a.x ), y( b.y-a.y ){}
+            
+            double operator*( const Vector& other ) const {
+                return x*other.x + y*other.y;
+            }
+            
+            double norm() const{
+                return sqrt( x*x + y*y );
+            }
+
+            //z-component of the cross product to have the orientation to the other vector
+            double cross( const Vector& other ) const {
+                return x*other.y-y*other.x;
+            }
+    };
 }
 
-Command::Command( const std::string& str, const Position& before )
-      : before_( before ), after_( before )
+Command::Command( const std::string& str )
 {
-    //Ignore non-GCode lines, eg. empty lines, comments, MCode
-    if( str.empty() || str[0] == '(' ){
+    if( str[0] == '(' ){
         comment_ = str;
         return;
     }
@@ -32,10 +52,6 @@ Command::Command( const std::string& str, const Position& before )
     for( const auto& p : params ){
         setValue( p[0], p.substr(1) );
     }
-}
-
-bool Command::isEmpty() const{
-    return comment_.empty() && params_.empty();
 }
 
 bool Command::isComment() const{
@@ -47,25 +63,69 @@ bool Command::hasKey( char c ) const{
     return it != params_.end();
 }
 
-const Position& Command::setValue( char c, const std::string& value ){
+const std::string& Command::value(char c) const{
+    auto it = std::find_if( params_.begin(), params_.end(), [&](const Param& p){return p.key==c;});
+    if( it == params_.end() ){
+        return comment_;
+    } else {
+        return it->value;
+    } 
+}
+
+void Command::setValue( char c, const std::string& value ){
     auto it = std::find_if( params_.begin(), params_.end(), [&](const Param& p){return p.key==c;});
     if( it == params_.end() ){
         params_.emplace_back( c, value );
     } else {
         it->value = value;
     }
-    if( c == 'X' ) after_.x = std::stod( value );
-    if( c == 'Y' ) after_.y = std::stod( value );
-    if( c == 'Z' ) after_.z = std::stod( value );
-    return after_;
 }
 
-const Position& Command::before() const{
-    return before_;
+void Command::remove( char c ){
+    auto it = std::find_if( params_.begin(), params_.end(), [&](const Param& p){return p.key==c;});
+    if( it != params_.end() ){
+        params_.erase( it );
+    }
 }
 
-const Position& Command::after() const {
-    return after_;
+Position Command::endPosition( const Position& start ) const{
+    Position p = start;
+    if( hasKey('X') ) p.x = std::stod( value('X') );
+    if( hasKey('Y') ) p.y = std::stod( value('Y') );
+    if( hasKey('Z') ) p.depth = std::stod( value('Z') );
+    return p;
+}
+
+double Command::pathLength( const Position& start ) const{
+    if( isComment() || params_.front().key != 'G' ){
+        return 0.0;
+    }
+
+    auto endPos = endPosition( start );
+    auto code = std::stoul( params_.front().value );
+    if( code <= 1 ){
+        //(Fast) liear move
+        return dist( start, endPos );
+    } else if ( code <= 3 ){
+        //The center of the circle (spiral)
+        auto i = std::stod( value('I') );
+        auto j = std::stod( value('J') );
+        Position center( endPos.x-i, endPos.y-j );
+        
+        //the angle can be calculated from the scalar product
+        Vector ca( center, start );
+        Vector cb( center, endPos );
+        double angle = acos( (ca*cb)/ca.norm()/cb.norm() );
+
+        //The direction of the angle can be calculated by the cross product
+        double zd = ca.cross(cb);
+        if( code == 2 && zd>0.0 || code == 3 && zd<0.0){
+            angle = 2*M_PI-angle;
+        }
+
+        return ca.norm()*angle;
+    }
+    return 0.0;
 }
 
 std::string Command::toString() const{
@@ -90,4 +150,19 @@ std::string Command::toString() const{
         str.erase( str.size()-1 );
     }
     return str;
+}
+
+bool Command::operator==( const Command& other ) const{
+    if( params_.size() != other.params_.size() ){
+		return false;
+	}
+	bool identic = true;
+	for( size_t i=0; i<params_.size(); ++i ){
+		identic = identic && params_[i] == other.params_[i];
+	}
+    return identic;
+}
+
+bool Command::operator!=( const Command& other ) const{
+    return !this->operator==( other );
 }

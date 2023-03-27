@@ -1,25 +1,29 @@
 #include "Part.h"
 
-size_t Part::end() const{
-    return start+size();
-}
-
 size_t Part::size() const {
     return cmds_.size();
 }
 
-void Part::append( const Part& other, size_t begin ){
-    return append( other, begin, other.size() );
-}
-
-void Part::append( const Part& other, size_t begin, size_t end ){
-    for( size_t i=begin; i<end; ++i ) { 
-        cmds_.push_back( other[i] );
-    }
+bool Part::isEmpty() const{
+    return cmds_.empty();
 }
 
 void Part::append( const Command& cmd ){
     cmds_.push_back( cmd );
+}
+
+void Part::append( const Part& part ){
+    for( size_t i=0; i<part.size(); ++i ){
+        append( part[i] );
+    }
+}
+
+Part Part::subPart( size_t startIdx, size_t endIdx ) const{
+    Part res;
+    for( size_t i = startIdx; i<endIdx && i<cmds_.size(); ++i ){
+        res.append( cmds_[i]);
+    }
+    return res;
 }
 
 const Command& Part::operator[]( size_t idx ) const{
@@ -30,12 +34,58 @@ Command& Part::operator[]( size_t idx ){
     return cmds_[idx];
 }
 
-const Position& Part::before() const{
-    return cmds_.front().before();
+bool Part::operator==( const Part& other ) const{
+    if( size() != other.size() ){
+        return false;
+    }
+    bool identic = true;
+	for( size_t i=0; i<cmds_.size(); ++i ){
+		identic = identic && cmds_[i] == other[i];
+	}
+    return identic;
 }
 
-const Position& Part::after() const {
-    return cmds_.back().after();
+bool Part::operator!=( const Part& other ) const{
+    return ! this->operator==( other );
+}
+
+Position Part::endPosition(  const Position& start ) const{
+    Position pos = start;
+    for( const auto& cmd: cmds_ ){
+        pos = cmd.endPosition( pos );
+    }
+    return pos;
+}
+
+double Part::pathLength( const Position& startPos ) const{
+    double length = 0.0;
+    Position pos = startPos;
+    for( const auto& cmd: cmds_ ){
+        length += cmd.pathLength( pos );
+        pos = cmd.endPosition( pos );
+    }
+    return length;
+}
+
+double Part::pathDuration( const Position& startPos ) const{
+    double fast = 8000.0;//mm/min
+    double speed = 0.0;
+    double duration = 0.0;
+    Position pos = startPos;
+    for( const auto& cmd : cmds_ ){
+        if( cmd.value('G') == "00" ){
+            duration += cmd.pathLength(pos)/fast;
+            pos = cmd.endPosition( pos );
+        } else if( cmd.hasKey('G') ){
+            if( cmd.hasKey('F') ){
+                speed = std::stod( cmd.value('F') );
+            }
+            duration += cmd.pathLength( pos )/speed;
+            pos =cmd.endPosition( pos );
+        }
+        //Ignore other commands
+    }
+    return duration; //in minutes
 }
 
 std::string Part::toString() const {

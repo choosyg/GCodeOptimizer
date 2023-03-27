@@ -2,6 +2,8 @@
 set( SOURCES
     Command.h
     Command.cpp
+    GCodeFile.h
+    GCodeFile.cpp
     Part.h
     Part.cpp
 	Optimize.h
@@ -15,7 +17,10 @@ add_library( GCode
 )
 
 add_executable( GCodeTest
+    Command.test.cpp
     Optimize.test.cpp
+    Part.test.cpp
+    Position.test.cpp
 )
 target_link_libraries( GCodeTest gtest_main GCode )
 if (MSVC)

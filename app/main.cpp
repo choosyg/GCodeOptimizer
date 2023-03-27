@@ -1,7 +1,7 @@
-#include "gcode/Optimize.h"
+#include <gcode/GCodeFile.h>
+#include <gcode/Optimize.h>
 
 #include <iostream>
-#include <fstream>
 
 int main( int argc, char** argv ){
 
@@ -10,17 +10,13 @@ int main( int argc, char** argv ){
         exit(1);
     }
 
-    auto complete = readComplete( argv[1] );
-    auto parts = findParts( complete );
+    GCodeFile file( argv[1] );
 
-    Part result;
-    size_t idx = 0;
-    for( const auto& part: parts ){
-        result.append( complete, idx, part.start );
-        result.append( optimizePart( part ) );
-        idx = part.end();
+    Position start;
+    for( size_t idx=0; idx<file.size(); ++idx ){
+        file[ idx ] = optimizePart( file[idx], start );
+        start = file[idx].endPosition( start );
     }
-    result.append( complete, idx );
 
-    std::ofstream( "result.nc" ) << result.toString() << std::endl;
+    file.save( "optimized.nc" );
 }
