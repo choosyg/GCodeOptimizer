@@ -13,8 +13,9 @@ GCodeFile::GCodeFile( const std::string& filename ){
 		getline(file, line);
         if( line.empty() && !parts_.back().isEmpty() ){
             parts_.emplace_back();
+        } else if( !line.empty() ){
+            parts_.back().append( Command( line ) );
         }
-        parts_.back().append( Command( line ) );
 	}
 }
 
@@ -31,7 +32,8 @@ size_t GCodeFile::size() const{
 }
 
 void GCodeFile::save( const std::string& filename ) const{
+    std::ofstream os( "optimized.nc" );
     for( const auto& part : parts_ ){
-        std::ofstream( "optimized.nc" ) << part.toString() << std::endl;
+        os << part.toString() << std::endl;
     }
 }
