@@ -110,8 +110,8 @@ double Command::pathLength( const Position& start ) const{
         //The center of the circle (spiral)
         auto i = std::stod( value('I') );
         auto j = std::stod( value('J') );
-        Position center( endPos.x-i, endPos.y-j );
-        
+        Position center( start.x+i, start.y+j );
+
         //the angle can be calculated from the scalar product
         Vector ca( center, start );
         Vector cb( center, endPos );

@@ -24,12 +24,12 @@ TEST( OptimizeTest, ShouldOptimizeMinimumLinear ) {
 
 TEST( OptimizeTest, ShouldOptimizeMinimumCircular ) {
     Part part;
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-1.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-1.1" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-1.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-1.1" ) );
     part.append( Command( "G02 X0.0 Y-1.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-2.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-2.2" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-2.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-2.2" ) );
     part.append( Command( "G02 X0.0 Y-1.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
 
@@ -44,21 +44,21 @@ TEST( OptimizeTest, ShouldOptimizeMinimumCircular ) {
 
 TEST( OptimizeTest, ShouldOptimizeMinimumCircular2 ) {
     Part part;
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-1.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-2.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-1.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-2.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X1.0 Y1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-3.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-4.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-3.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-4.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X1.0 Y1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
 
     auto res = optimizePart( part, Position(0.0,1.0) );
 
     ASSERT_EQ( res.size(), 6 );
-    EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I1.0 J0.0" );
+    EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I0.0 J-1.0" );
     EXPECT_EQ( res[1].toString(), "G01 X1.0 Y1.0 Z-1.636620" );
     EXPECT_EQ( res[2].toString(), "G01 X0.0 Y1.0 Z-2.000000" );
 }
@@ -90,21 +90,21 @@ TEST( OptimizeTest, ShouldOptimizeBigerBlock ) {
 
 TEST( OptimizeTest, ShouldOptimizeEvenIfPathIsToShort ) {
     Part part;
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-1.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-2.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-1.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-2.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0 Z-3.0" ) );
-    part.append( Command( "G03 X0.0 Y1.0 I0.0 J1.0 Z-4.0" ) );
-    part.append( Command( "G02 X1.0 Y0.0 I1.0 J0.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0 Z-3.0" ) );
+    part.append( Command( "G03 X0.0 Y1.0 I-1.0 J0.0 Z-4.0" ) );
+    part.append( Command( "G02 X1.0 Y0.0 I0.0 J-1.0" ) );
     part.append( Command( "G01 X0.0 Y1.0" ) );
     
     auto res = optimizePart( part, Position(0.0,1.0) );
     
     ASSERT_EQ( res.size(), 6 ); // note that we have an extra round to maintain dive angle
-    EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I1.0 J0.0" ); 
+    EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I0.0 J-1.0" ); 
     EXPECT_EQ( res[1].toString(), "G01 X0.0 Y1.0 Z-1.900316" );
-    EXPECT_EQ( res[2].toString(), "G02 X1.0 Y0.0 Z-2.900316 I1.0 J0.0" ); 
+    EXPECT_EQ( res[2].toString(), "G02 X1.0 Y0.0 Z-2.900316 I0.0 J-1.0" ); 
 }
 
 TEST( OptimizeTest, ShouldNotOptimizeSingleBlock ) {

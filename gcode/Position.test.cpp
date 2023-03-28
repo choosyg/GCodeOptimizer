@@ -18,4 +18,5 @@ TEST( PositionTest, ShouldCalculateDistance ) {
     Position pos2( 0.0, 1.0);
 
     ASSERT_EQ( sqrt(2.0), dist( pos1, pos2 ) );
+    ASSERT_EQ( sqrt(2.0), dist( pos2, pos1 ) );
 }

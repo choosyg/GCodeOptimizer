@@ -77,7 +77,7 @@ TEST( CommandTest, ShouldCalculateCorrectLengthForLinearMovementG1XYZ ) {
 
 TEST( CommandTest, ShouldCalculateCorrectLengthForG2_90Degree ) {
     Position pos( 0.0, 1.0, 0.0 );
-    Command cmd( "G02 X1.0 Y0.0 I1.0 J0.0");
+    Command cmd( "G02 X1.0 Y0.0 I0.0 J-1.0");
     ASSERT_NEAR( M_PI/2.0, cmd.pathLength( pos ), 0.0000001 );
 }
 
@@ -89,13 +89,13 @@ TEST( CommandTest, ShouldCalculateCorrectLengthForG2_180Degree ) {
 
 TEST( CommandTest, ShouldCalculateCorrectLengthForG2_270Degree ) {
     Position pos( 0.0, 1.0, 0.0 );
-    Command cmd( "G02 X-1.0 Y0.0 I-1.0 J0.0");
+    Command cmd( "G02 X-1.0 Y0.0 I0.0 J-1.0");
     ASSERT_NEAR( M_PI/2.0*3.0, cmd.pathLength( pos ), 0.0000001 );
 }
 
-TEST( CommandTest, ShouldCalculateCorrectLengthForG3_90Degree ) {
+TEST( CommandTest, ShouldCalculateCorrectLengthForG3_270Degree ) {
     Position pos( 0.0, 1.0, 0.0 );
-    Command cmd( "G03 X1.0 Y0.0 I1.0 J0.0");
+    Command cmd( "G03 X1.0 Y0.0 I0.0 J-1.0");
     ASSERT_NEAR( M_PI/2.0*3.0, cmd.pathLength( pos ), 0.0000001 );
 }
 
@@ -105,8 +105,10 @@ TEST( CommandTest, ShouldCalculateCorrectLengthForG3_180Degree ) {
     ASSERT_NEAR( M_PI, cmd.pathLength( pos ), 0.0000001 );
 }
 
-TEST( CommandTest, ShouldCalculateCorrectLengthForG3_270Degree ) {
+TEST( CommandTest, ShouldCalculateCorrectLengthForG3_90Degree ) {
     Position pos( 0.0, 1.0, 0.0 );
-    Command cmd( "G03 X-1.0 Y0.0 I-1.0 J0.0");
+    Command cmd( "G03 X-1.0 Y0.0 I0.0 J-1.0");
     ASSERT_NEAR( M_PI/2.0, cmd.pathLength( pos ), 0.0000001 );
 }
+
+
