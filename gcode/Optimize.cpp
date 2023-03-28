@@ -106,6 +106,21 @@ namespace {
 		return angle;
 	}
 
+	bool validate( const Block& dive, const Block& track ){
+		size_t steps = dive.part.size()/2;
+		if( track.part.size() < steps ){
+			return false;
+		}
+
+		bool valid = true;
+		for( size_t i=0; i<steps-1; ++i ){ // the last cmd may differ
+			auto cmd = dive.part[i];
+			cmd.remove('Z');
+			valid = valid && cmd == track.part[i];
+		}
+		return valid;
+	}
+
 }
 
 Part optimizePart(const Part& part, const Position& start ) {
@@ -126,6 +141,11 @@ Part optimizePart(const Part& part, const Position& start ) {
 	auto trackBlock = extractTrackBlock( part, diveBlock.endIdx, diveBlock.endPos );
 	if( trackBlock.part.isEmpty() || trackBlock.endPos != trackBlock.startPos ){
 		std::cout << "Discarded - invalid track-block" << std::endl;
+		return part;
+	}
+
+	if( !validate( diveBlock, trackBlock ) ){
+		std::cout << "Discarded - track-block does not match dive-block" << std::endl;
 		return part;
 	}
 
