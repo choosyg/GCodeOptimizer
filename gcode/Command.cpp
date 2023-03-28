@@ -1,5 +1,7 @@
 #include "Command.h"
 
+#include "Vector.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -18,27 +20,6 @@ namespace{
 
         return res;
     }
-
-    class Vector{
-        public:
-            double x;
-            double y;
-
-            Vector( const Position& a, const Position& b ) :x( b.x-a.x ), y( b.y-a.y ){}
-            
-            double operator*( const Vector& other ) const {
-                return x*other.x + y*other.y;
-            }
-            
-            double norm() const{
-                return sqrt( x*x + y*y );
-            }
-
-            //z-component of the cross product to have the orientation to the other vector
-            double cross( const Vector& other ) const {
-                return x*other.y-y*other.x;
-            }
-    };
 }
 
 Command::Command( const std::string& str )

@@ -14,6 +14,10 @@ bool Position::operator!= ( const Position& other ) const{
     return !this->operator==(other);
 }
 
+std::string Position::toString() const{
+    return "("+std::to_string(x) + ", " + std::to_string(y)+")";
+}
+
 double dist( const Position& a, const Position& b ){
     double dx = b.x-a.x;
     double dy = b.y-a.y;

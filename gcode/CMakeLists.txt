@@ -10,6 +10,8 @@ set( SOURCES
 	Optimize.cpp
     Position.h
     Position.cpp
+    Vector.h
+    Vector.cpp
 )
 
 add_library( GCode

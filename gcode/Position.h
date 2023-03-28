@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 class Position{
     public:
 		Position(double xx = 0.0, double yy = 0.0, double depth = 0.0);
@@ -10,6 +12,8 @@ class Position{
 
         bool operator== ( const Position& other ) const; // compares x/y
         bool operator!= ( const Position& other ) const; // compares x/y
+
+        std::string toString() const;
 };
 
 double dist( const Position& a, const Position& b );

@@ -3,6 +3,7 @@
 #include "Command.h"
 #include "Position.h"
 #include "Part.h"
+#include "Vector.h"
 
 #include <cmath>
 #include <iostream>
@@ -121,6 +122,94 @@ namespace {
 		return valid;
 	}
 
+	std::array< Command, 2 > split( const Command& cmd, const Position& pos, double percent ){
+		auto endPos = cmd.endPosition( pos );
+		
+		auto code = std::stoul( cmd.value('G') );
+		if( code <= 1 ){
+			//Linear movement
+			auto dx = endPos.x-pos.x;
+			auto dy = endPos.y-pos.y;
+			auto dz = endPos.depth-pos.depth;
+			Position splitPos( pos.x + percent*dx, pos.y + percent*dy, pos.depth + percent*dz);
+			
+			Command cmd1 = cmd;
+			if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
+			if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
+			if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
+			return {cmd1, cmd };
+		} else if ( code <=3 ){
+			auto i = std::stod( cmd.value('I') );
+			auto j = std::stod( cmd.value('J') );
+			Position center = Position( pos.x+i, pos.y+j );
+
+			//the angle can be calculated from the scalar product
+			Vector ca( center, pos );
+			Vector cb( center, endPos );
+			double angle = acos( (ca*cb)/ca.norm()/cb.norm() );
+
+			//Rotate ca by (angle*percent) to find splitPos
+			double a = -angle*percent;
+			Vector v = ca;
+			v.x = cos(a)*ca.x-sin(a)*ca.y;
+			v.y = sin(a)*ca.x+cos(a)*ca.y;
+			auto dz = endPos.depth-pos.depth;
+			Position splitPos( center.x + v.x, center.y+v.y, pos.depth + percent*dz );
+
+			Command cmd1 = cmd;
+			if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
+			if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
+			if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
+
+			Command cmd2 = cmd; //X,Y,Z still correct
+			cmd2.setValue( 'I', std::to_string( center.x - splitPos.x ) );
+			cmd2.setValue( 'J', std::to_string( center.y - splitPos.y ) );
+			return {cmd1, cmd2 };
+		}
+		throw std::runtime_error("Not implemented");
+	}
+
+	Part buildSpiralCycle( const Block& track, double angle, double cycledepth, double startz ){
+		Position pos = track.startPos;
+		pos.depth = startz;
+
+		//build dive part and track part
+		Part cycle;
+		size_t idx = 0;
+		double depth = 0;
+		while( depth > cycledepth ){
+			auto cmd = track.part[idx];
+			double l = cmd.pathLength( pos );
+			double delta = tan(angle)*l;
+
+			//fix numerical issue - Avoid split if l ist just a very little to long - so we use a little slighter angle
+			if( fabs(depth+delta - cycledepth) < 0.0001 ){
+				delta = cycledepth-depth;
+			}
+
+			if( depth+delta < cycledepth ){
+				//if delta brings us to low, we have to divide the cmd path
+				//calculate percentage of the path part we need for the ramp
+				double percent = 1.0 + (cycledepth - ( depth+delta )) / delta;
+				auto cmds = split( cmd, pos, percent );
+				depth = cycledepth;
+				cmds[0].setValue('Z', std::to_string( startz + depth ) );
+				cycle.append( cmds[0] );
+				cycle.append( cmds[1] );
+				++idx;
+				break;
+			} else {
+				depth += delta;
+				cmd.setValue( 'Z', std::to_string( startz + depth ) );
+				cycle.append( cmd );
+				pos = cmd.endPosition( pos );
+				++idx;
+			}
+		}
+		cycle.append( track.part.subPart( idx ) );
+
+		return cycle;
+	}
 }
 
 Part optimizePart(const Part& part, const Position& start ) {
@@ -149,8 +238,11 @@ Part optimizePart(const Part& part, const Position& start ) {
 		return part;
 	}
 
+	//dive + track are the complete cycle that will repeat now -> build a cycle template from both blocks
 	Part cycleTemplate = removeZ( diveBlock.part );
 	cycleTemplate.append( trackBlock.part );
+
+    // build a Block containing all cycles including dive and track found above
 	auto cyclesBlock = extracktCyclesBlock( part, cycleTemplate, diveBlock.startIdx, diveBlock.startPos );
 	if( cyclesBlock.part.size()/cycleTemplate.size() < 2 ){
 		std::cout << "Discarded - not enough cycles for optimization" << std::endl;
@@ -162,7 +254,7 @@ Part optimizePart(const Part& part, const Position& start ) {
 	//Create ramp from dive-block finishing at partEntryPosition
 	double angle = extractAngle( diveBlock );
 	double divedepth = diveBlock.endPos.depth - diveBlock.startPos.depth;
-	std::cout << "Detected dive-depth: " << divedepth << std::endl;
+	std::cout << "Detected dive-depth per cycle: " << divedepth << std::endl;
 	
 	double rampLength = divedepth / tan( angle );
 	double tracklength = trackBlock.part.pathLength( trackBlock.startPos );
@@ -170,7 +262,7 @@ Part optimizePart(const Part& part, const Position& start ) {
 	if( rampLength > tracklength ){
 		rampLength = tracklength;
 		divedepth = tan(angle)*tracklength;
-		std::cout << "Reducing dive-depth due to short track: " << divedepth << std::endl;
+		std::cout << "Reducing dive-depth per cycle due to short track: " << divedepth << std::endl;
 	}
 	
 	Part result;
@@ -179,42 +271,36 @@ Part optimizePart(const Part& part, const Position& start ) {
 	result.append( approachBlock.part );
 	
 	//Add spiral
+	std::cout << "Building spiral cyle template" << std::endl;
+	Part spiralCycle = buildSpiralCycle( trackBlock, angle, divedepth, cyclesBlock.startPos.depth );
+
 	std::cout << "Building spiral" << std::endl;
-	Position spiralPosition = cyclesBlock.startPos;
-	size_t trackidx = 0;
-	while( spiralPosition.depth != cyclesBlock.endPos.depth ){
-		//build ramp
-		double rampdepth = 0.0;
-		while( rampdepth > divedepth ){
-			auto cmd = trackBlock.part[trackidx];
-			double l = cmd.pathLength( spiralPosition );
-			double depthDelta = tan(angle)*l;
-			rampdepth += depthDelta;
-			//Assert depth per round is not increased
-			if( rampdepth < divedepth ){
-				depthDelta = divedepth - rampdepth + depthDelta;
-				rampdepth = divedepth;
+	Position pos = cyclesBlock.startPos;
+	//while we are too high according to machine accuracy -> add one more cycle
+	while( fabs( pos.depth - cyclesBlock.endPos.depth ) > 0.00001){ 
+		result.append( spiralCycle );
+		pos = spiralCycle.endPosition( pos );
+		
+		//shift spiral cycle down
+		for( size_t i=0; i<spiralCycle.size(); ++i ){
+			if( spiralCycle[i].hasKey('Z') ){
+				double z = std::stod( spiralCycle[i].value('Z') ) + divedepth;
+				if( z< cyclesBlock.endPos.depth ) z=cyclesBlock.endPos.depth;
+				spiralCycle[i].setValue( 'Z', std::to_string( z ) );
 			}
-			//Assert maximal depth is not increased
-			if( spiralPosition.depth+depthDelta < cyclesBlock.endPos.depth ){
-				cmd.setValue('Z', std::to_string( cyclesBlock.endPos.depth ) );
-			} else {
-				cmd.setValue('Z', std::to_string( spiralPosition.depth+depthDelta ) );
-			}
-			spiralPosition = cmd.endPosition( spiralPosition );
-			result.append( cmd );
-			++trackidx;
 		}
-		//add rest of track
-		auto tr = trackBlock.part.subPart(trackidx);
-		result.append( tr );
-		spiralPosition = tr.endPosition( spiralPosition );
-		std::cout << "Built cycle " << spiralPosition.depth << std::endl;
-		trackidx = 0;
 	}
-	//Add end-ramp
+
+	//Add end-ramp - add all cmds containing Z from spiralCycle but without Z
 	std::cout << "Building end-ramp" << std::endl;
-	//TODO
+	for( size_t i=0; i<spiralCycle.size(); ++i ){
+		if( spiralCycle[i].hasKey('Z') ){
+			spiralCycle[i].remove('Z');
+			result.append( spiralCycle[i] );
+		} else {
+			break;
+		}
+	}
 
 	//Add trailing commands
 	std::cout << "Building trailing block" << std::endl;
