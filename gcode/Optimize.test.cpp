@@ -17,7 +17,7 @@ TEST( OptimizeTest, ShouldOptimizeMinimumLinear ) {
 
     auto res = optimizePart( part, Position() );
 
-    ASSERT_EQ( res.size(), 7 );
+    ASSERT_EQ( res.size(), 8 );
     ASSERT_EQ( res[0].toString(), "G01 X1.100000 Y1.100000 Z-1.100000" );
     ASSERT_EQ( res[1].toString(), "G01 X2.0 Y2.0" ); // Z should not become -2 here!
     ASSERT_EQ( res[2].toString(), "G01 X0.0 Y0.0" );
@@ -25,6 +25,7 @@ TEST( OptimizeTest, ShouldOptimizeMinimumLinear ) {
     ASSERT_EQ( res[4].toString(), "G01 X2.0 Y2.0" );
     ASSERT_EQ( res[5].toString(), "G01 X0.0 Y0.0" );
     ASSERT_EQ( res[6].toString(), "G01 X1.100000 Y1.100000" );
+    ASSERT_EQ( res[7].toString(), "G01 X0.000000 Y0.000000" );
 }
 
 TEST( OptimizeTest, ShouldOptimizeMinimumCircular ) {
@@ -40,7 +41,7 @@ TEST( OptimizeTest, ShouldOptimizeMinimumCircular ) {
 
     auto res = optimizePart( part, Position(0.0,1.0) );
 
-    ASSERT_EQ( res.size(), 7 );
+    ASSERT_EQ( res.size(), 8 );
     EXPECT_EQ( res[0].toString(), "G02 X0.987688 Y-0.156434 Z-1.100000 I0.0 J-1.0" );
     EXPECT_EQ( res[1].toString(), "G02 X0.0 Y-1.0 I-0.987688 J0.156434" );
     EXPECT_EQ( res[2].toString(), "G01 X0.0 Y1.0" );
@@ -48,6 +49,7 @@ TEST( OptimizeTest, ShouldOptimizeMinimumCircular ) {
     EXPECT_EQ( res[4].toString(), "G02 X0.0 Y-1.0 I-0.987688 J0.156434" );
     EXPECT_EQ( res[5].toString(), "G01 X0.0 Y1.0" );
     EXPECT_EQ( res[6].toString(), "G02 X0.987688 Y-0.156434 I0.0 J-1.0" );
+    EXPECT_EQ( res[7].toString(), "G03 X0.000000 Y1.000000 I-0.987688 J0.156434" );
 }
 
 TEST( OptimizeTest, ShouldOptimizeMinimumCircular2 ) {
@@ -65,7 +67,7 @@ TEST( OptimizeTest, ShouldOptimizeMinimumCircular2 ) {
 
     auto res = optimizePart( part, Position(0.0,1.0) );
 
-    ASSERT_EQ( res.size(), 11 );
+    ASSERT_EQ( res.size(), 14 );
     EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I0.0 J-1.0" );
     EXPECT_EQ( res[1].toString(), "G01 X1.0 Y1.0 Z-1.636620" );
     EXPECT_EQ( res[2].toString(), "G01 X0.429204 Y1.000000 Z-2.000000" );
@@ -93,7 +95,7 @@ TEST( OptimizeTest, ShouldOptimizeBigerBlock ) {
 
     std::cout << res.toString() << std::endl;
 
-    ASSERT_EQ( res.size(), 8 );
+    ASSERT_EQ( res.size(), 10 );
     EXPECT_EQ( res[0].toString(), "G01 X1.0 Y1.0 Z-1.000000" ); 
     EXPECT_EQ( res[1].toString(), "G01 X2.0 Y2.0 Z-2.000000" ); //Note that the second comand has no Z added since -2 was reached before
     EXPECT_EQ( res[2].toString(), "G01 X0.0 Y0.0" ); 
@@ -113,7 +115,7 @@ TEST( OptimizeTest, ShouldOptimizeEvenIfPathIsToShort ) {
     
     auto res = optimizePart( part, Position(0.0,1.0) );
     
-    ASSERT_EQ( res.size(), 8 ); // note that we have an extra round to maintain dive angle
+    ASSERT_EQ( res.size(), 10 ); // note that we have an extra round to maintain dive angle
     EXPECT_EQ( res[0].toString(), "G02 X1.0 Y0.0 Z-1.000000 I0.0 J-1.0" ); 
     EXPECT_EQ( res[1].toString(), "G01 X0.0 Y1.0 Z-1.900316" );
     EXPECT_EQ( res[2].toString(), "G02 X1.0 Y0.0 Z-2.900316 I0.0 J-1.0" ); 

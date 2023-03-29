@@ -173,7 +173,10 @@ std::array< Command, 2 > split( const Command& cmd, const Position& pos, double 
         double angle = acos( (ca*cb)/norm(ca)/norm(cb) );
 
         //Rotate ca by (angle*percent) to find splitPos
-        double a = -angle*percent;
+        double a = angle*percent;
+        if( code == 2 ){
+            a = -angle*percent;
+        }
         Vector v = ca;
         v.x = cos(a)*ca.x-sin(a)*ca.y;
         v.y = sin(a)*ca.x+cos(a)*ca.y;
@@ -189,6 +192,33 @@ std::array< Command, 2 > split( const Command& cmd, const Position& pos, double 
         cmd2.setValue( 'I', std::to_string( center.x - splitPos.x ) );
         cmd2.setValue( 'J', std::to_string( center.y - splitPos.y ) );
         return {cmd1, cmd2 };
+    }
+    throw std::runtime_error("Not implemented");
+}
+
+Command invert( const Command& cmd, const Position& pos ){
+    Command inv = cmd;
+    if( cmd.hasKey('X') ) inv.setValue('X', std::to_string( pos.x ) );
+    if( cmd.hasKey('Y') ) inv.setValue('Y', std::to_string( pos.y ) );
+    if( cmd.hasKey('Z') ) inv.setValue('Z', std::to_string( pos.depth ) );
+		
+    auto code = std::stoul( cmd.value('G') );
+    if( code <= 1 ){
+        //Linear movement
+        return inv;
+    } else if ( code <=3 ){
+        if( code==2 ){
+            inv.setValue('G', "03" );
+        } else {
+            inv.setValue('G', "02" );
+        }
+        auto endPos = endPosition( cmd, pos );
+        auto i = std::stod( cmd.value('I') );
+        auto j = std::stod( cmd.value('J') );
+        Position center = Position( pos.x+i, pos.y+j );
+        inv.setValue('I', std::to_string( center.x-endPos.x ) );
+        inv.setValue('J', std::to_string( center.y-endPos.y ) );
+        return inv;
     }
     throw std::runtime_error("Not implemented");
 }

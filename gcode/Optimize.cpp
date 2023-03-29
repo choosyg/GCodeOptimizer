@@ -254,13 +254,19 @@ Part optimizePart(const Part& part, const Position& start ) {
 
 	//Add end-ramp - add all cmds containing Z from spiralCycle but without Z
 	std::cout << "Building end-ramp" << std::endl;
+	std::vector<Command> invers;
 	for( size_t i=0; i<spiralCycle.size(); ++i ){
 		if( spiralCycle[i].hasKey('Z') ){
 			spiralCycle[i].remove('Z');
 			result.append( spiralCycle[i] );
+			invers.push_back( invert( spiralCycle[i], pos ) );
+			pos = endPosition( spiralCycle[i], pos );
 		} else {
 			break;
 		}
+	}
+	for( size_t i=invers.size(); i>0; --i ){
+		result.append( invers[i-1] );
 	}
 
 	//Add trailing commands

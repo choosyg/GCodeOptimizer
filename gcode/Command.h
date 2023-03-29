@@ -42,4 +42,6 @@ double length( const Command& cmd, const Position& start );
 //split command into 2 commands starting at pos, [0] = going percent of the path from pos to some point, [1] continue path to endPosition
 std::array< Command, 2 > split( const Command& cmd, const Position& pos, double percent );
 
+Command invert( const Command& cmd, const Position& pos );
+
 }

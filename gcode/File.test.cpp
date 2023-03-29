@@ -18,7 +18,7 @@ TEST( FileTest, ShouldOptimizeKreisKlein ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 0.151250, 1e-5 ); // 6 Sekunden
+    ASSERT_NEAR( file.duration(), 0.153418, 1e-5 ); // 6 Sekunden
 }
 
 TEST( FileTest, ShouldOptimizeKreisGross ) {
@@ -34,7 +34,7 @@ TEST( FileTest, ShouldOptimizeKreisGross ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 2.520327, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.529321, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeKreisGrossAnbindungen ) {
@@ -50,7 +50,7 @@ TEST( FileTest, ShouldOptimizeKreisGrossAnbindungen ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 2.886582, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.759502, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeRechteck ) {
@@ -66,7 +66,7 @@ TEST( FileTest, ShouldOptimizeRechteck ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 3.594779, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.604000, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeRechteckAnbindungen ) {
@@ -82,7 +82,7 @@ TEST( FileTest, ShouldOptimizeRechteckAnbindungen ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 3.815671, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.8251235, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeSchraube ) {
@@ -98,7 +98,7 @@ TEST( FileTest, ShouldOptimizeSchraube ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 0.443139, 1e-5 );
+    ASSERT_NEAR( file.duration(), 0.454307, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeSchrauben ) {
@@ -114,5 +114,5 @@ TEST( FileTest, ShouldOptimizeSchrauben ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 5.197267, 1e-5 );
+    ASSERT_NEAR( file.duration(), 5.332719, 1e-5 );
 }

@@ -112,3 +112,59 @@ TEST( CommandTest, ShallCompare ) {
     ASSERT_EQ( cmd1, cmd2 );
     ASSERT_NE( cmd1, cmd3 );
 }
+
+TEST( CommandTest, ShallSplitFast ) {
+    Position pos;
+    Command cmd( "G00 X2.0, Y4.0 Z1.0");
+    auto s = split( cmd, pos, 0.5 );
+    ASSERT_EQ( s[0].toString(), "G00 X1.000000 Y2.000000 Z0.500000" );
+    ASSERT_EQ( s[1].toString(), cmd.toString() );
+}
+
+TEST( CommandTest, ShallSplitLinear ) {
+    Position pos;
+    Command cmd( "G01 X2.0, Y4.0 Z1.0");
+    auto s = split( cmd, pos, 0.5 );
+    ASSERT_EQ( s[0].toString(), "G01 X1.000000 Y2.000000 Z0.500000" );
+    ASSERT_EQ( s[1].toString(), cmd.toString() );
+}
+
+TEST( CommandTest, ShallSplitClockwise ) {
+    Position pos(0.0,1.0,0.0);
+    Command cmd( "G02 X0.0, Y-1.0 Z1.0 I0 J-1");
+    auto s = split( cmd, pos, 0.5 );
+    ASSERT_EQ( s[0].toString(), "G02 X1.000000 Y0.000000 Z0.500000 I0 J-1" );
+    ASSERT_EQ( s[1].toString(), "G02 X0.0, Y-1.0 Z1.0 I-1.000000 J-0.000000" );
+}
+
+TEST( CommandTest, ShallSplitCounterClockwise ) {
+    Position pos(1.0,0.0,0.0);
+    Command cmd( "G03 X-1.0, Y0.0 Z1.0 I-1 J0");
+    auto s = split( cmd, pos, 0.5 );
+    ASSERT_EQ( s[0].toString(), "G03 X0.000000 Y1.000000 Z0.500000 I-1 J0" );
+    ASSERT_EQ( s[1].toString(), "G03 X-1.0, Y0.0 Z1.0 I-0.000000 J-1.000000" );
+}
+
+TEST( CommandTest, ShallInvertFast ) {
+    Position pos( 2.0,3.0,4.0);
+    Command cmd( "G00 X2.0, Y4.0 Z1.0");
+    auto inv = invert( cmd, pos );
+    ASSERT_EQ( inv.toString(), "G00 X2.000000 Y3.000000 Z4.000000" );
+}
+
+TEST( CommandTest, ShallInvertLinear ) {
+    Position pos( 2.0,3.0,4.0);
+    Command cmd( "G01 X2.0, Y4.0 Z1.0");
+    auto inv = invert( cmd, pos );
+    ASSERT_EQ( inv.toString(), "G01 X2.000000 Y3.000000 Z4.000000" );
+}
+
+TEST( CommandTest, ShallInvertClockwise ) {
+    Position pos(0.0,1.0,0.0);
+    Command cmd( "G02 X1.000000 Y0.000000 Z1.000000 I0.000000 J-1.000000");
+    auto endPos = endPosition( cmd, pos );
+    auto inv = invert( cmd, pos );
+    ASSERT_EQ( inv.toString(), "G03 X0.000000 Y1.000000 Z0.000000 I-1.000000 J0.000000" );
+    auto inv2 = invert( inv, endPos );
+    ASSERT_EQ( inv2.toString(), cmd.toString() );
+}
