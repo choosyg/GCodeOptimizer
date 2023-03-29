@@ -10,7 +10,7 @@ TEST( FileTest, ShouldOptimizeKreisKlein ) {
     File file( dir+"KreisKlein.nc" );
 
     ASSERT_EQ( file.size(), 6 );
-    ASSERT_NEAR( file.duration(), 0.159402, 1e-5 );
+    ASSERT_NEAR( file.duration(), 0.209402, 1e-5 ); // 12 Sekunden
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -18,7 +18,7 @@ TEST( FileTest, ShouldOptimizeKreisKlein ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 0.1012504, 1e-5 );
+    ASSERT_NEAR( file.duration(), 0.151250, 1e-5 ); // 6 Sekunden
 }
 
 TEST( FileTest, ShouldOptimizeKreisGross ) {
@@ -26,7 +26,7 @@ TEST( FileTest, ShouldOptimizeKreisGross ) {
     File file( dir+"KreisGross.nc" );
 
     ASSERT_EQ( file.size(), 6 );
-    ASSERT_NEAR( file.duration(), 2.687268, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.737268, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -34,7 +34,7 @@ TEST( FileTest, ShouldOptimizeKreisGross ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 2.470327, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.520327, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeKreisGrossAnbindungen ) {
@@ -42,7 +42,7 @@ TEST( FileTest, ShouldOptimizeKreisGrossAnbindungen ) {
     File file( dir+"KreisGrossAnbindungen.nc" );
 
     ASSERT_EQ( file.size(), 6 );
-    ASSERT_NEAR( file.duration(), 2.860736, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.910736, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -50,7 +50,7 @@ TEST( FileTest, ShouldOptimizeKreisGrossAnbindungen ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 2.836582, 1e-5 );
+    ASSERT_NEAR( file.duration(), 2.886582, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeRechteck ) {
@@ -58,7 +58,7 @@ TEST( FileTest, ShouldOptimizeRechteck ) {
     File file( dir+"Rechteck.nc" );
 
     ASSERT_EQ( file.size(), 6 );
-    ASSERT_NEAR( file.duration(), 3.761948, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.811948, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -66,7 +66,7 @@ TEST( FileTest, ShouldOptimizeRechteck ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 3.544779, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.594779, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeRechteckAnbindungen ) {
@@ -74,7 +74,7 @@ TEST( FileTest, ShouldOptimizeRechteckAnbindungen ) {
     File file( dir+"RechteckAnbindungen.nc" );
 
     ASSERT_EQ( file.size(), 6 );
-    ASSERT_NEAR( file.duration(), 3.926358, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.976358, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -82,7 +82,7 @@ TEST( FileTest, ShouldOptimizeRechteckAnbindungen ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 3.765671, 1e-5 );
+    ASSERT_NEAR( file.duration(), 3.815671, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeSchraube ) {
@@ -90,7 +90,7 @@ TEST( FileTest, ShouldOptimizeSchraube ) {
     File file( dir+"Schraube.nc" );
 
     ASSERT_EQ( file.size(), 7 );
-    ASSERT_NEAR( file.duration(), 0.563106, 1e-5 );
+    ASSERT_NEAR( file.duration(), 0.613106, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -98,7 +98,7 @@ TEST( FileTest, ShouldOptimizeSchraube ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 0.393139, 1e-5 );
+    ASSERT_NEAR( file.duration(), 0.443139, 1e-5 );
 }
 
 TEST( FileTest, ShouldOptimizeSchrauben ) {
@@ -106,7 +106,7 @@ TEST( FileTest, ShouldOptimizeSchrauben ) {
     File file( dir+"Schrauben.nc" );
 
     ASSERT_EQ( file.size(), 29 );
-    ASSERT_NEAR( file.duration(), 7.188299, 1e-5 );
+    ASSERT_NEAR( file.duration(), 7.238299, 1e-5 );
 
     Position pos;
     for( size_t idx=0; idx<file.size(); ++idx ){
@@ -114,5 +114,5 @@ TEST( FileTest, ShouldOptimizeSchrauben ) {
         pos = endPosition( file[idx], pos );
     }
 
-    ASSERT_NEAR( file.duration(), 5.147267, 1e-5 );
+    ASSERT_NEAR( file.duration(), 5.197267, 1e-5 );
 }

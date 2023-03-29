@@ -92,6 +92,8 @@ double duration( const Part& part, const Position& startPos ){
             }
             duration += length( part[i], pos )/speed;
             pos = endPosition( part[i], pos );
+        }  else if( part[i].value('M')=="03" ){
+            duration += 3.0/60.0; //Motoranlaufzeit 3 Sekunden
         }
         //Ignore other commands
     }
