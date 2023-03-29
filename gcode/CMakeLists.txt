@@ -17,6 +17,7 @@ set( SOURCES
 add_library( GCode
     ${SOURCES}
 )
+target_compile_definitions( GCode PUBLIC -D_USE_MATH_DEFINES )
 
 add_executable( GCodeTest
     Command.test.cpp

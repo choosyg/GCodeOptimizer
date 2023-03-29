@@ -2,6 +2,7 @@
 
 #include "Position.h"
 
+#include <array>
 #include <string>
 #include <map>
 #include <vector>
