@@ -2,21 +2,28 @@
 
 #include <cmath>
 
+namespace gcode{
+
 Vector::Vector( const Position& a, const Position& b ) :x( b.x-a.x ), y( b.y-a.y ){}
-        
-double Vector::operator*( const Vector& other ) const {
-    return x*other.x + y*other.y;
+
+double operator*( const Vector& a, const Vector& b ){
+    return a.x*b.x + a.y*b.y;
 }
 
-Vector Vector::operator*( double v ) const{
-    return Vector( x*v, y*v );
+Vector operator*( const Vector& a, double v ){
+    return Vector( a.x*v, a.y*v );
 }
 
-double Vector::norm() const{
-    return sqrt( x*x + y*y );
+Vector operator*( double v, const Vector& a ){
+    return a*v;
 }
 
-//z-component of the cross product to have the orientation to the other vector
-double Vector::cross( const Vector& other ) const {
-    return x*other.y-y*other.x;
+double norm( const Vector& v){
+    return sqrt( v*v );
+}
+
+Direction rotationDirection( const Vector& a, const Vector& b ){
+    return a.x*b.y-a.y*b.x < 0 ? Direction::Clockwise : Direction::CounterClockwise;
+}
+
 }

@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+using namespace gcode;
+
 TEST( PositionTest, ShouldCompareCorrect ) {
     Position pos1( 1.0, 2.0);
     Position pos2( 1.0, 2.0, 2.0);

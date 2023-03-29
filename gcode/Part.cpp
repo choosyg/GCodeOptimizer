@@ -1,5 +1,7 @@
 #include "Part.h"
 
+namespace gcode{
+
 size_t Part::size() const {
     return cmds_.size();
 }
@@ -34,64 +36,66 @@ Command& Part::operator[]( size_t idx ){
     return cmds_[idx];
 }
 
-bool Part::operator==( const Part& other ) const{
-    if( size() != other.size() ){
-        return false;
-    }
-    bool identic = true;
-	for( size_t i=0; i<cmds_.size(); ++i ){
-		identic = identic && cmds_[i] == other[i];
-	}
-    return identic;
-}
-
-bool Part::operator!=( const Part& other ) const{
-    return ! this->operator==( other );
-}
-
-Position Part::endPosition(  const Position& start ) const{
-    Position pos = start;
-    for( const auto& cmd: cmds_ ){
-        pos = cmd.endPosition( pos );
-    }
-    return pos;
-}
-
-double Part::pathLength( const Position& startPos ) const{
-    double length = 0.0;
-    Position pos = startPos;
-    for( const auto& cmd: cmds_ ){
-        length += cmd.pathLength( pos );
-        pos = cmd.endPosition( pos );
-    }
-    return length;
-}
-
-double Part::pathDuration( const Position& startPos ) const{
-    double fast = 8000.0;//mm/min
-    double speed = 0.0;
-    double duration = 0.0;
-    Position pos = startPos;
-    for( const auto& cmd : cmds_ ){
-        if( cmd.value('G') == "00" ){
-            duration += cmd.pathLength(pos)/fast;
-            pos = cmd.endPosition( pos );
-        } else if( cmd.hasKey('G') ){
-            if( cmd.hasKey('F') ){
-                speed = std::stod( cmd.value('F') );
-            }
-            duration += cmd.pathLength( pos )/speed;
-            pos =cmd.endPosition( pos );
-        }
-        //Ignore other commands
-    }
-    return duration; //in minutes
-}
-
 std::string Part::toString() const {
     std::string str;
     for( size_t i = 0; i < cmds_.size(); ++i ) {
         str += cmds_[i].toString() + "\n";
     }
     return str;
+}
+
+bool operator==( const Part& a, const Part& b ){
+    if( a.size() != b.size() ){
+        return false;
+    }
+    bool identic = true;
+	for( size_t i=0; i<a.size(); ++i ){
+		identic = identic && a[i] == b[i];
+	}
+    return identic;
+}
+
+bool operator!=( const Part& a, const Part& b ){
+    return !( a== b );
+}
+
+Position endPosition( const Part& part, const Position& startPos ){
+    Position pos = startPos;
+    for( size_t i=0; i<part.size(); ++i ){
+        pos = endPosition( part[i], pos );
+    }
+    return pos;
+}
+
+double length( const Part& part, const Position& startPos ){
+    double l = 0.0;
+    Position pos = startPos;
+    for( size_t i=0; i<part.size(); ++i ){
+        l += length( part[i], pos );
+        pos = endPosition( part[i], pos );
+    }
+    return l;
+}
+
+double duration( const Part& part, const Position& startPos ){
+    double fast = 8000.0;//mm/min
+    double speed = 0.0;
+    double duration = 0.0;
+    Position pos = startPos;
+    for( size_t i=0; i<part.size(); ++i ){
+        if( part[i].value('G') == "00" ){
+            duration += length(part[i], pos)/fast;
+            pos = endPosition( part[i], pos );
+        } else if( part[i].hasKey('G') ){
+            if( part[i].hasKey('F') ){
+                speed = std::stod( part[i].value('F') );
+            }
+            duration += length( part[i], pos )/speed;
+            pos = endPosition( part[i], pos );
+        }
+        //Ignore other commands
+    }
+    return duration; //in minutes
+}
+
 }

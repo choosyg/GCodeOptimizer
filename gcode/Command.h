@@ -6,6 +6,8 @@
 #include <map>
 #include <vector>
 
+namespace gcode{
+
 class Command {
     public:
       Command( const std::string& str );
@@ -16,13 +18,7 @@ class Command {
       void setValue( char c, const std::string& value );
       void remove( char c );
 
-      Position endPosition(  const Position& start ) const;
-      double pathLength( const Position& start ) const;
-
       std::string toString() const;
-
-      bool operator==( const Command& other ) const;
-      bool operator!=( const Command& other ) const;
 
     private: 
       struct Param{ 
@@ -36,3 +32,14 @@ class Command {
       std::string comment_;
       std::vector<Param> params_;
 };
+
+bool operator==( const Command& a, const Command& b );
+bool operator!=( const Command& a, const Command& b );
+
+Position endPosition( const Command& cmd, const Position& start );
+double length( const Command& cmd, const Position& start );
+
+//split command into 2 commands starting at pos, [0] = going percent of the path from pos to some point, [1] continue path to endPosition
+std::array< Command, 2 > split( const Command& cmd, const Position& pos, double percent );
+
+}

@@ -1,8 +1,10 @@
-#include "GCodeFile.h"
+#include "File.h"
 
 #include <fstream>
 
-GCodeFile::GCodeFile( const std::string& filename ){
+namespace gcode{
+
+File::File( const std::string& filename ){
     //Open file
     std::ifstream file(filename);
 
@@ -19,21 +21,33 @@ GCodeFile::GCodeFile( const std::string& filename ){
 	}
 }
 
-const Part& GCodeFile::operator[]( size_t idx ) const{
+const Part& File::operator[]( size_t idx ) const{
     return parts_[idx];
 }
 
-Part& GCodeFile::operator[]( size_t idx ){
+Part& File::operator[]( size_t idx ){
     return parts_[idx];
 }
 
-size_t GCodeFile::size() const{
+size_t File::size() const{
     return parts_.size();
 }
 
-void GCodeFile::save( const std::string& filename ) const{
+double File::duration() const{
+    double d=0.0;
+    Position pos;
+    for( const auto&p: parts_){
+        d += gcode::duration( p, pos );
+        pos = endPosition( p, pos );
+    }
+    return d;
+}
+
+void File::save( const std::string& filename ) const{
     std::ofstream os( "optimized.nc" );
     for( const auto& part : parts_ ){
         os << part.toString() << std::endl;
     }
+}
+
 }

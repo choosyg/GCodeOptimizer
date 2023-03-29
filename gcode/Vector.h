@@ -2,18 +2,22 @@
 
 #include "Position.h"
 
+namespace gcode{
+
 class Vector{
     public:
+        Vector( const Position& a, const Position& b );
         double x;
         double y;
-
-        Vector( const Position& a, const Position& b );
-        
-        double operator*( const Vector& other ) const;    
-        Vector operator*( double v ) const;
-
-        double norm() const;
-
-        //z-component of the cross product to have the orientation to the other vector
-        double cross( const Vector& other ) const;
 };
+
+double operator*( const Vector& a, const Vector& b );    
+Vector operator*( const Vector& a, double v );
+Vector operator*( double v, const Vector& a );
+
+double norm( const Vector& v );
+
+enum class Direction { Clockwise, CounterClockwise };
+Direction rotationDirection( const Vector& a, const Vector& b );
+
+}

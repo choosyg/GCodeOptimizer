@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
+namespace gcode{
 namespace{
     std::vector< std::string > split( const std::string& str, char d ){
         size_t start = 0;
@@ -69,46 +70,6 @@ void Command::remove( char c ){
     }
 }
 
-Position Command::endPosition( const Position& start ) const{
-    Position p = start;
-    if( hasKey('X') ) p.x = std::stod( value('X') );
-    if( hasKey('Y') ) p.y = std::stod( value('Y') );
-    if( hasKey('Z') ) p.depth = std::stod( value('Z') );
-    return p;
-}
-
-double Command::pathLength( const Position& start ) const{
-    if( isComment() || params_.front().key != 'G' ){
-        return 0.0;
-    }
-
-    auto endPos = endPosition( start );
-    auto code = std::stoul( params_.front().value );
-    if( code <= 1 ){
-        //(Fast) liear move
-        return dist( start, endPos );
-    } else if ( code <= 3 ){
-        //The center of the circle (spiral)
-        auto i = std::stod( value('I') );
-        auto j = std::stod( value('J') );
-        Position center( start.x+i, start.y+j );
-
-        //the angle can be calculated from the scalar product
-        Vector ca( center, start );
-        Vector cb( center, endPos );
-        double angle = acos( (ca*cb)/ca.norm()/cb.norm() );
-
-        //The direction of the angle can be calculated by the cross product
-        double zd = ca.cross(cb);
-        if( code == 2 && zd>0.0 || code == 3 && zd<0.0){
-            angle = 2*M_PI-angle;
-        }
-
-        return ca.norm()*angle;
-    }
-    return 0.0;
-}
-
 std::string Command::toString() const{
     std::string str = comment_;
 
@@ -133,17 +94,99 @@ std::string Command::toString() const{
     return str;
 }
 
-bool Command::operator==( const Command& other ) const{
-    if( params_.size() != other.params_.size() ){
-		return false;
-	}
-	bool identic = true;
-	for( size_t i=0; i<params_.size(); ++i ){
-		identic = identic && params_[i] == other.params_[i];
-	}
-    return identic;
+bool operator==( const Command& a, const Command& b ){
+    return a.toString() == b.toString();
 }
 
-bool Command::operator!=( const Command& other ) const{
-    return !this->operator==( other );
+bool operator!=(  const Command& a, const Command& b  ){
+    return !(a == b );
+}
+
+Position endPosition( const Command& cmd, const Position& start ){
+    Position p = start;
+    if( cmd.hasKey('X') ) p.x = std::stod( cmd.value('X') );
+    if( cmd.hasKey('Y') ) p.y = std::stod( cmd.value('Y') );
+    if( cmd.hasKey('Z') ) p.depth = std::stod( cmd.value('Z') );
+    return p;
+}
+
+double length( const Command& cmd, const Position& start ){
+    if( cmd.isComment() || !cmd.hasKey('G') ){
+        return 0.0;
+    }
+
+    auto endPos = endPosition( cmd, start );
+    auto code = std::stoul( cmd.value('G') );
+    if( code <= 1 ){
+        //(Fast) liear move
+        return dist( start, endPos );
+    } else if ( code <= 3 ){
+        //The center of the circle (spiral)
+        auto i = std::stod( cmd.value('I') );
+        auto j = std::stod( cmd.value('J') );
+        Position center( start.x+i, start.y+j );
+
+        //the angle can be calculated from the scalar product
+        Vector ca( center, start );
+        Vector cb( center, endPos );
+        double angle = acos( (ca*cb)/norm(ca)/norm(cb) );
+
+        //The direction of the angle can be calculated by the cross product
+        auto zd = rotationDirection( ca, cb );
+        if( code == 2 && zd==Direction::CounterClockwise || code == 3 && zd==Direction::Clockwise){
+            angle = 2*M_PI-angle;
+        }
+
+        return norm(ca)*angle;
+    }
+    return 0.0;
+}
+
+std::array< Command, 2 > split( const Command& cmd, const Position& pos, double percent ){
+    auto endPos = endPosition( cmd, pos );
+		
+    auto code = std::stoul( cmd.value('G') );
+    if( code <= 1 ){
+        //Linear movement
+        auto dx = endPos.x-pos.x;
+        auto dy = endPos.y-pos.y;
+        auto dz = endPos.depth-pos.depth;
+        Position splitPos( pos.x + percent*dx, pos.y + percent*dy, pos.depth + percent*dz);
+        
+        Command cmd1 = cmd;
+        if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
+        if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
+        if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
+        return {cmd1, cmd };
+    } else if ( code <=3 ){
+        auto i = std::stod( cmd.value('I') );
+        auto j = std::stod( cmd.value('J') );
+        Position center = Position( pos.x+i, pos.y+j );
+
+        //the angle can be calculated from the scalar product
+        Vector ca( center, pos );
+        Vector cb( center, endPos );
+        double angle = acos( (ca*cb)/norm(ca)/norm(cb) );
+
+        //Rotate ca by (angle*percent) to find splitPos
+        double a = -angle*percent;
+        Vector v = ca;
+        v.x = cos(a)*ca.x-sin(a)*ca.y;
+        v.y = sin(a)*ca.x+cos(a)*ca.y;
+        auto dz = endPos.depth-pos.depth;
+        Position splitPos( center.x + v.x, center.y+v.y, pos.depth + percent*dz );
+
+        Command cmd1 = cmd;
+        if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
+        if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
+        if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
+
+        Command cmd2 = cmd; //X,Y,Z still correct
+        cmd2.setValue( 'I', std::to_string( center.x - splitPos.x ) );
+        cmd2.setValue( 'J', std::to_string( center.y - splitPos.y ) );
+        return {cmd1, cmd2 };
+    }
+    throw std::runtime_error("Not implemented");
+}
+
 }

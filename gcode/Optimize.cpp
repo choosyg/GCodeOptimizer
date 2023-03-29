@@ -12,6 +12,8 @@
 #include <string.h>
 #include <vector>
 
+using namespace gcode;
+
 namespace {
 	Part removeZ( const Part& part ){
 		Part result = part;
@@ -40,7 +42,7 @@ namespace {
 			res.part.append( part[res.endIdx] );
 			++res.endIdx; 
 		}
-		res.endPos = res.part.endPosition( start );
+		res.endPos = endPosition( res.part, start );
 		return res;
 	}
 
@@ -51,7 +53,7 @@ namespace {
 			++idx; 
 		}
 		res.endIdx = idx;
-		res.endPos = res.part.endPosition( start );
+		res.endPos = endPosition( res.part, start );
 		return res;
 	}
 
@@ -62,7 +64,7 @@ namespace {
 			++idx;
 		}
 		res.endIdx = idx;
-		res.endPos = res.part.endPosition( start );
+		res.endPos = endPosition( res.part, start );
 		std::cout << "Detected dive-block length: " << res.part.size() << std::endl;
 		return res;
 	}
@@ -74,7 +76,7 @@ namespace {
 			++idx;
 		}
 		res.endIdx = idx;
-		res.endPos = res.part.endPosition( start );
+		res.endPos = endPosition( res.part, start );
 		std::cout << "Detected track-block length: " << res.part.size() << std::endl;
 		return res;
 	}
@@ -94,15 +96,15 @@ namespace {
 			}
 		}
 		res.endIdx = idx;
-		res.endPos = res.part.endPosition( start );
+		res.endPos = endPosition( res.part, start );
 		return res;
 	}
 
-	double extractAngle( const Block& diveBlock ){
-		auto pos = diveBlock.part[0].endPosition( diveBlock.startPos );
+	double extractDiveAngle( const Block& diveBlock ){
+		auto pos = endPosition( diveBlock.part[0], diveBlock.startPos );
 		double zdiff= pos.depth - diveBlock.startPos.depth;
-		double length = diveBlock.part[0].pathLength( diveBlock.startPos );
-		double angle = atan( zdiff / length );
+		double l = length( diveBlock.part[0], diveBlock.startPos );
+		double angle = atan( zdiff / l );
 		std::cout << "Detected dive-angle: " << angle/2.0/M_PI*360.0 << "°" << std::endl;
 		return angle;
 	}
@@ -122,53 +124,6 @@ namespace {
 		return valid;
 	}
 
-	std::array< Command, 2 > split( const Command& cmd, const Position& pos, double percent ){
-		auto endPos = cmd.endPosition( pos );
-		
-		auto code = std::stoul( cmd.value('G') );
-		if( code <= 1 ){
-			//Linear movement
-			auto dx = endPos.x-pos.x;
-			auto dy = endPos.y-pos.y;
-			auto dz = endPos.depth-pos.depth;
-			Position splitPos( pos.x + percent*dx, pos.y + percent*dy, pos.depth + percent*dz);
-			
-			Command cmd1 = cmd;
-			if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
-			if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
-			if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
-			return {cmd1, cmd };
-		} else if ( code <=3 ){
-			auto i = std::stod( cmd.value('I') );
-			auto j = std::stod( cmd.value('J') );
-			Position center = Position( pos.x+i, pos.y+j );
-
-			//the angle can be calculated from the scalar product
-			Vector ca( center, pos );
-			Vector cb( center, endPos );
-			double angle = acos( (ca*cb)/ca.norm()/cb.norm() );
-
-			//Rotate ca by (angle*percent) to find splitPos
-			double a = -angle*percent;
-			Vector v = ca;
-			v.x = cos(a)*ca.x-sin(a)*ca.y;
-			v.y = sin(a)*ca.x+cos(a)*ca.y;
-			auto dz = endPos.depth-pos.depth;
-			Position splitPos( center.x + v.x, center.y+v.y, pos.depth + percent*dz );
-
-			Command cmd1 = cmd;
-			if( cmd.hasKey('X') ) cmd1.setValue('X', std::to_string( splitPos.x ) );
-			if( cmd.hasKey('Y') ) cmd1.setValue('Y', std::to_string( splitPos.y ) );
-			if( cmd.hasKey('Z') ) cmd1.setValue('Z', std::to_string( splitPos.depth ) );
-
-			Command cmd2 = cmd; //X,Y,Z still correct
-			cmd2.setValue( 'I', std::to_string( center.x - splitPos.x ) );
-			cmd2.setValue( 'J', std::to_string( center.y - splitPos.y ) );
-			return {cmd1, cmd2 };
-		}
-		throw std::runtime_error("Not implemented");
-	}
-
 	Part buildSpiralCycle( const Block& track, double angle, double cycledepth, double startz ){
 		Position pos = track.startPos;
 		pos.depth = startz;
@@ -179,7 +134,7 @@ namespace {
 		double depth = 0;
 		while( depth > cycledepth ){
 			auto cmd = track.part[idx];
-			double l = cmd.pathLength( pos );
+			double l = length( cmd, pos );
 			double delta = tan(angle)*l;
 
 			//fix numerical issue - Avoid split if l ist just a very little to long - so we use a little slighter angle
@@ -202,7 +157,7 @@ namespace {
 				depth += delta;
 				cmd.setValue( 'Z', std::to_string( startz + depth ) );
 				cycle.append( cmd );
-				pos = cmd.endPosition( pos );
+				pos = endPosition( cmd, pos );
 				++idx;
 			}
 		}
@@ -211,6 +166,8 @@ namespace {
 		return cycle;
 	}
 }
+
+namespace gcode{
 
 Part optimizePart(const Part& part, const Position& start ) {
 	if( part.isEmpty() ){
@@ -252,12 +209,12 @@ Part optimizePart(const Part& part, const Position& start ) {
 	std::cout << "Optimizing..." << std::endl;
 
 	//Create ramp from dive-block finishing at partEntryPosition
-	double angle = extractAngle( diveBlock );
+	double angle = extractDiveAngle( diveBlock );
 	double divedepth = diveBlock.endPos.depth - diveBlock.startPos.depth;
 	std::cout << "Detected dive-depth per cycle: " << divedepth << std::endl;
 	
 	double rampLength = divedepth / tan( angle );
-	double tracklength = trackBlock.part.pathLength( trackBlock.startPos );
+	double tracklength = length( trackBlock.part, trackBlock.startPos );
 	//if the track is to short, we need to make more rounds
 	if( rampLength > tracklength ){
 		rampLength = tracklength;
@@ -279,7 +236,7 @@ Part optimizePart(const Part& part, const Position& start ) {
 	//while we are too high according to machine accuracy -> add one more cycle
 	while( fabs( pos.depth - cyclesBlock.endPos.depth ) > 0.00001){ 
 		result.append( spiralCycle );
-		pos = spiralCycle.endPosition( pos );
+		pos = endPosition( spiralCycle, pos );
 		
 		//shift spiral cycle down
 		for( size_t i=0; i<spiralCycle.size(); ++i ){
@@ -309,3 +266,4 @@ Part optimizePart(const Part& part, const Position& start ) {
 	return result;
 }
 
+}
