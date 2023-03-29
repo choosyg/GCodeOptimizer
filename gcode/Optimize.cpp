@@ -15,10 +15,11 @@
 using namespace gcode;
 
 namespace {
-	Part removeZ( const Part& part ){
+	Part removeZAndF( const Part& part ){
 		Part result = part;
 		for( size_t i=0; i<part.size(); ++i ){
 			result[i].remove('Z');
+			result[i].remove('F');
 		}
 		return result;
 	}
@@ -85,7 +86,7 @@ namespace {
 		Block res( idx, start );
 		while(idx<part.size()){
 			std::cout << "Analyzing cycle...";
-			Part candidate = removeZ( part.subPart( idx, idx+cycle.size() ) );
+			Part candidate = removeZAndF( part.subPart( idx, idx+cycle.size() ) );
 			if( candidate == cycle ){
 				std::cout << " match detected" << std::endl;
 				res.part.append( part.subPart( idx, idx+cycle.size() ) );
@@ -116,10 +117,13 @@ namespace {
 		}
 
 		bool valid = true;
-		for( size_t i=0; i<steps-1; ++i ){ // the last cmd may differ
-			auto cmd = dive.part[i];
-			cmd.remove('Z');
-			valid = valid && cmd == track.part[i];
+		for( size_t i=0; i<steps-1 && valid; ++i ){ // the last cmd may differ
+			auto dc = dive.part[i];
+			dc.remove('Z');
+			dc.remove('F');
+			auto tc = track.part[i];
+			tc.remove('F');
+			valid = valid && dc == tc;
 		}
 		return valid;
 	}
@@ -196,9 +200,9 @@ Part optimizePart(const Part& part, const Position& start ) {
 	}
 
 	//dive + track are the complete cycle that will repeat now -> build a cycle template from both blocks
-	Part cycleTemplate = removeZ( diveBlock.part );
-	cycleTemplate.append( trackBlock.part );
-
+	Part cycleTemplate = removeZAndF( diveBlock.part );
+	cycleTemplate.append( removeZAndF( trackBlock.part ) );
+	
     // build a Block containing all cycles including dive and track found above
 	auto cyclesBlock = extracktCyclesBlock( part, cycleTemplate, diveBlock.startIdx, diveBlock.startPos );
 	if( cyclesBlock.part.size()/cycleTemplate.size() < 2 ){

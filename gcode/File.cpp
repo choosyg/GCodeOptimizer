@@ -8,10 +8,17 @@ File::File( const std::string& filename ){
     //Open file
     std::ifstream file(filename);
 
+    //read the first line and remove UTF8 indicating chars
+    std::string line;
+    getline(file, line);
+    if( line.substr(0,3) == "\357\273\277" ){
+        line = line.substr( 3 );
+    }
+
     //read all commands and split into parts at empty lines
     parts_.emplace_back();
+    parts_.back().append( Command( line ) );
 	while (file) {
-		std::string line;
 		getline(file, line);
         if( line.empty() && !parts_.back().isEmpty() ){
             parts_.emplace_back();

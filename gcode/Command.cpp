@@ -103,6 +103,10 @@ bool operator!=(  const Command& a, const Command& b  ){
 }
 
 Position endPosition( const Command& cmd, const Position& start ){
+    if( cmd.isComment() ){
+        return start;
+    }
+    
     Position p = start;
     if( cmd.hasKey('X') ) p.x = std::stod( cmd.value('X') );
     if( cmd.hasKey('Y') ) p.y = std::stod( cmd.value('Y') );
