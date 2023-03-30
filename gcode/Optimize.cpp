@@ -85,14 +85,11 @@ namespace {
 	Block extracktCyclesBlock( const Part& part, const Part& cycle, size_t idx, const Position& start ){
 		Block res( idx, start );
 		while(idx<part.size()){
-			std::cout << "Analyzing cycle...";
 			Part candidate = removeZAndF( part.subPart( idx, idx+cycle.size() ) );
 			if( candidate == cycle ){
-				std::cout << " match detected" << std::endl;
 				res.part.append( part.subPart( idx, idx+cycle.size() ) );
 				idx += cycle.size();
 			} else { 
-				std::cout << " missmatch detected" << std::endl;
 				break; 
 			}
 		}
@@ -178,7 +175,9 @@ Part optimizePart(const Part& part, const Position& start ) {
 		std::cout << "Skipping empty part" << std::endl;
 		return part;
 	}
-	std::cout << "Analyzing part " << part[0].toString() << std::endl; //typically a comment with the name of the part
+	std::cout << "***********************************************************************************************" << std::endl;
+	std::cout << "* Analyzing part " << part[0].toString() << std::endl; //typically a comment with the name of the part
+	std::cout << "***********************************************************************************************" << std::endl;
 
 	auto initBlock = extractInitBlock( part, start );
 	auto approachBlock = extractApproachBlock( part, initBlock.endIdx, initBlock.endPos );
@@ -210,8 +209,6 @@ Part optimizePart(const Part& part, const Position& start ) {
 		return part;
 	}
 	
-	std::cout << "Optimizing..." << std::endl;
-
 	//Create ramp from dive-block finishing at partEntryPosition
 	double angle = extractDiveAngle( diveBlock );
 	double divedepth = diveBlock.endPos.depth - diveBlock.startPos.depth;
@@ -227,15 +224,13 @@ Part optimizePart(const Part& part, const Position& start ) {
 	}
 	
 	Part result;
-	std::cout << "Building start block" << std::endl;
+	std::cout << "Building Optimized GCode" << std::endl;
 	result.append( initBlock.part );
 	result.append( approachBlock.part );
 	
 	//Add spiral
-	std::cout << "Building spiral cyle template" << std::endl;
 	Part spiralCycle = buildSpiralCycle( trackBlock, angle, divedepth, cyclesBlock.startPos.depth );
 
-	std::cout << "Building spiral" << std::endl;
 	Position pos = cyclesBlock.startPos;
 	//while we are too high according to machine accuracy -> add one more cycle
 	while( fabs( pos.depth - cyclesBlock.endPos.depth ) > 0.00001){ 
@@ -253,7 +248,6 @@ Part optimizePart(const Part& part, const Position& start ) {
 	}
 
 	//Add end-ramp - add all cmds containing Z from spiralCycle but without Z
-	std::cout << "Building end-ramp" << std::endl;
 	std::vector<Command> invers;
 	for( size_t i=0; i<spiralCycle.size(); ++i ){
 		if( spiralCycle[i].hasKey('Z') ){
@@ -270,7 +264,6 @@ Part optimizePart(const Part& part, const Position& start ) {
 	}
 
 	//Add trailing commands
-	std::cout << "Building trailing block" << std::endl;
 	result.append( part.subPart( cyclesBlock.endIdx ) );
 	
 	return result;

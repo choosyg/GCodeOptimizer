@@ -51,7 +51,7 @@ double File::duration() const{
 }
 
 void File::save( const std::string& filename ) const{
-    std::ofstream os( "optimized.nc" );
+    std::ofstream os( filename );
     for( const auto& part : parts_ ){
         os << part.toString() << std::endl;
     }
