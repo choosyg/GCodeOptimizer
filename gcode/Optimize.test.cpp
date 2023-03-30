@@ -93,8 +93,6 @@ TEST( OptimizeTest, ShouldOptimizeBigerBlock ) {
 
     auto res = optimizePart( part, Position() );
 
-    std::cout << res.toString() << std::endl;
-
     ASSERT_EQ( res.size(), 10 );
     EXPECT_EQ( res[0].toString(), "G01 X1.0 Y1.0 Z-1.000000" ); 
     EXPECT_EQ( res[1].toString(), "G01 X2.0 Y2.0 Z-2.000000" ); //Note that the second comand has no Z added since -2 was reached before
