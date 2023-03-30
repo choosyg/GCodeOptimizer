@@ -15,11 +15,10 @@
 using namespace gcode;
 
 namespace {
-	Part removeZAndF( const Part& part ){
+	Part removeZ( const Part& part ){
 		Part result = part;
 		for( size_t i=0; i<part.size(); ++i ){
 			result[i].remove('Z');
-			result[i].remove('F');
 		}
 		return result;
 	}
@@ -85,7 +84,7 @@ namespace {
 	Block extracktCyclesBlock( const Part& part, const Part& cycle, size_t idx, const Position& start ){
 		Block res( idx, start );
 		while(idx<part.size()){
-			Part candidate = removeZAndF( part.subPart( idx, idx+cycle.size() ) );
+			Part candidate = removeZ( part.subPart( idx, idx+cycle.size() ) );
 			if( candidate == cycle ){
 				res.part.append( part.subPart( idx, idx+cycle.size() ) );
 				idx += cycle.size();
@@ -125,7 +124,7 @@ namespace {
 		return valid;
 	}
 
-	Part buildSpiralCycle( const Block& track, double angle, double cycledepth, double startz ){
+	Part buildSpiralCycle( const Block& track, double angle, double cycledepth, double startz, const std::string& divespeed ){
 		Position pos = track.startPos;
 		pos.depth = startz;
 
@@ -164,6 +163,18 @@ namespace {
 		}
 		cycle.append( track.part.subPart( idx ) );
 
+		//Fix speeds
+		if( !divespeed.empty() ){
+			cycle[0].setValue( 'F', divespeed );
+			auto trackspeed = track.part[0].value('F');
+			for( size_t i=0; i<cycle.size(); ++i ){
+				if( !cycle[i].hasKey('Z') ){
+					cycle[i].setValue( 'F', trackspeed );
+					break;
+				}
+			}
+		}
+
 		return cycle;
 	}
 }
@@ -193,18 +204,36 @@ Part optimizePart(const Part& part, const Position& start ) {
 		return part;
 	}
 
+	if( trackBlock.endIdx == part.size() ){
+		std::cout << "Discarded - part has single track" << std::endl;
+		return part;
+	}
+
 	if( !validate( diveBlock, trackBlock ) ){
 		std::cout << "Discarded - track-block does not match dive-block" << std::endl;
 		return part;
 	}
 
 	//dive + track are the complete cycle that will repeat now -> build a cycle template from both blocks
-	Part cycleTemplate = removeZAndF( diveBlock.part );
-	cycleTemplate.append( removeZAndF( trackBlock.part ) );
+	Part cycleTemplate = removeZ( diveBlock.part );
+	cycleTemplate.append( trackBlock.part );
+	//diveblock and track block might have different "F" values. In that case the first line of track has "F" 
+	//but the first line of dive has an "F" only in the following cycles -> fix that
+	std::string diveSpeed;
+	if( trackBlock.part[0].hasKey('F') && !diveBlock.part[0].hasKey('F') ){
+		diveSpeed = part[trackBlock.endIdx].value('F');
+		if( diveSpeed.empty() ){
+			std::cout << "Discarded - unable to find correct dive-speed" << std::endl;
+			return part;
+		}
+		std::cout << "Detected dive-speed: " << diveSpeed << std::endl;
+		std::cout << "Detected track-speed: " << trackBlock.part[0].value('F') << std::endl;
+		cycleTemplate[0].setValue('F',diveSpeed);
+	}
 	
-    // build a Block containing all cycles including dive and track found above
-	auto cyclesBlock = extracktCyclesBlock( part, cycleTemplate, diveBlock.startIdx, diveBlock.startPos );
-	if( cyclesBlock.part.size()/cycleTemplate.size() < 2 ){
+    // build a Block containing all cycles excluding dive and track found above
+	auto cyclesBlock = extracktCyclesBlock( part, cycleTemplate, trackBlock.endIdx, trackBlock.endPos );
+	if( cyclesBlock.part.size()/cycleTemplate.size() < 1 ){
 		std::cout << "Discarded - not enough cycles for optimization" << std::endl;
 		return part;
 	}
@@ -229,9 +258,9 @@ Part optimizePart(const Part& part, const Position& start ) {
 	result.append( approachBlock.part );
 	
 	//Add spiral
-	Part spiralCycle = buildSpiralCycle( trackBlock, angle, divedepth, cyclesBlock.startPos.depth );
+	Part spiralCycle = buildSpiralCycle( trackBlock, angle, divedepth, diveBlock.startPos.depth, diveSpeed );
 
-	Position pos = cyclesBlock.startPos;
+	Position pos = diveBlock.startPos;
 	//while we are too high according to machine accuracy -> add one more cycle
 	while( fabs( pos.depth - cyclesBlock.endPos.depth ) > 0.00001){ 
 		result.append( spiralCycle );
@@ -252,6 +281,7 @@ Part optimizePart(const Part& part, const Position& start ) {
 	for( size_t i=0; i<spiralCycle.size(); ++i ){
 		if( spiralCycle[i].hasKey('Z') ){
 			spiralCycle[i].remove('Z');
+			spiralCycle[i].remove('F');
 			result.append( spiralCycle[i] );
 			invers.push_back( invert( spiralCycle[i], pos ) );
 			pos = endPosition( spiralCycle[i], pos );
